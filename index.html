@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SUB Token & Subscription Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    .btn {
+      padding: 0.5rem 1rem; font-size: 1rem; cursor: pointer;
+      border: none; background-color: #007BFF; color: white; border-radius: 4px;
+      margin-right: 1rem; margin-bottom: 1rem;
+    }
+    .btn:hover { background-color: #0056b3; }
+    .info { margin-top: 1rem; font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+  <h1>SUB Token & Subscription Demo (Sepolia)</h1>
+
+  <!-- Кнопки управления -->
+  <button id="connectBtn" class="btn">Connect Wallet</button>
+  <button id="approveBtn" class="btn" disabled>Approve Unlimited</button>
+  <button id="subscribeBtn" class="btn" disabled>Subscribe 1 Year</button>
+
+  <div class="info">
+    <p><strong>Wallet Address:</strong> <span id="walletAddress">-</span></p>
+    <p><strong>SUB Balance:</strong> <span id="subBalance">-</span></p>
+    <p><strong>Subscription End:</strong> <span id="subEnd">-</span></p>
+  </div>
+
+  <!-- ethers.js -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script>
+    // ==== 1) Укажите реальные адреса ====
+    const SUB_TOKEN_ADDRESS = "0xf23f5a16e4B4a03361b8C7E8D1836BA98f5d39C6";
+    const SUBSCRIPTION_CONTRACT_ADDRESS = "0x1e2fAfc9cDcbCa3C761396f1d046207efF130F52";
+
+    // ==== 2) ABI (упрощённое) ====
+    const SUB_TOKEN_ABI = [
+      "function balanceOf(address) view returns (uint256)",
+      "function approve(address spender, uint256 amount) returns (bool)"
+    ];
+    const SUBSCRIPTION_ABI = [
+      "function subscriptionEnd(address) view returns (uint256)",
+      "function subscribeOneYear()"
+    ];
+
+    let provider, signer;
+    let subToken, subscriptionContract;
+    let userAddress;
+
+    // Элементы HTML
+    const connectBtn = document.getElementById("connectBtn");
+    const approveBtn = document.getElementById("approveBtn");
+    const subscribeBtn = document.getElementById("subscribeBtn");
+
+    const walletAddressEl = document.getElementById("walletAddress");
+    const subBalanceEl = document.getElementById("subBalance");
+    const subEndEl = document.getElementById("subEnd");
+
+    // ===== Логика =====
+
+    // Обновляем баланс и дату конца подписки
+    async function updateData() {
+      if (!signer) return;
+      userAddress = await signer.getAddress();
+
+      // 1) Адрес
+      walletAddressEl.textContent = userAddress;
+
+      // 2) Баланс SUB
+      const balanceBn = await subToken.balanceOf(userAddress);
+      // У нас 18 decimals
+      const balance = ethers.utils.formatEther(balanceBn);
+      subBalanceEl.textContent = balance + " SUB";
+
+      // 3) Дата конца подписки
+      const endBn = await subscriptionContract.subscriptionEnd(userAddress);
+      const endTimestamp = endBn.toNumber(); // Unix timestamp
+      if (endTimestamp === 0) {
+        subEndEl.textContent = "Not subscribed";
+      } else {
+        const date = new Date(endTimestamp * 1000);
+        subEndEl.textContent = date.toLocaleString();
+      }
+    }
+
+    // Подключаемся к MetaMask
+    connectBtn.onclick = async () => {
+      if (!window.ethereum) {
+        alert("MetaMask not found");
+        return;
+      }
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+
+      // Инициализируем контракты
+      subToken = new ethers.Contract(SUB_TOKEN_ADDRESS, SUB_TOKEN_ABI, signer);
+      subscriptionContract = new ethers.Contract(SUBSCRIPTION_CONTRACT_ADDRESS, SUBSCRIPTION_ABI, signer);
+
+      // Активируем кнопки
+      approveBtn.disabled = false;
+      subscribeBtn.disabled = false;
+
+      // Обновим данные
+      await updateData();
+    };
+
+    // Approve unlimited
+    approveBtn.onclick = async () => {
+      try {
+        // Обычно используют максимальное uint256
+        const maxUint = ethers.constants.MaxUint256;
+        const tx = await subToken.approve(SUBSCRIPTION_CONTRACT_ADDRESS, maxUint);
+        console.log("approve tx", tx.hash);
+        await tx.wait();
+        console.log("approve confirmed");
+        alert("Approved unlimited SUB to SubscriptionContract");
+      } catch (err) {
+        console.error(err);
+        alert("Approve error: " + err.message);
+      }
+    };
+
+    // Подписаться на год
+    subscribeBtn.onclick = async () => {
+      try {
+        const tx = await subscriptionContract.subscribeOneYear();
+        console.log("subscribe tx", tx.hash);
+        await tx.wait();
+        console.log("subscribe confirmed");
+
+        await updateData();
+        alert("Subscribed for 1 year!");
+      } catch (err) {
+        console.error(err);
+        alert("Subscribe error: " + err.message);
+      }
+    };
+  </script>
+</body>
+</html>
