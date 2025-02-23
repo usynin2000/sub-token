@@ -10,8 +10,8 @@ account_address = account.address
 print(f"Connected to Sepolia as: {account_address}")
 
 # === 2) Адреса контрактов ===
-SUB_TOKEN_ADDRESS = "0xf23f5a16e4B4a03361b8C7E8D1836BA98f5d39C6"
-SUBSCRIPTION_CONTRACT_ADDRESS = "0x7666B64D68705F52A6786C047E200a74c212A526"
+SUB_TOKEN_ADDRESS = "0xCd33e6504dB957dcC70E99305CBa5a655Fa0c3Df"
+SUBSCRIPTION_CONTRACT_ADDRESS = "0xD01E201b6815918eaB868dc17Fd69a599A028678"
 
 # === 3) ABI контрактов ===
 SUBSCRIPTION_ABI = [
@@ -37,7 +37,7 @@ subscription_contract = w3.eth.contract(address=SUBSCRIPTION_CONTRACT_ADDRESS, a
 sub_token = w3.eth.contract(address=SUB_TOKEN_ADDRESS, abi=SUB_TOKEN_ABI)
 
 # === 5) Кого будем списывать? ===
-user_address = "0x17dD57eaaF89aa437af2eE84Bd38c40AC99Ab7b2"  # Тот, кто дал approve
+user_address = "0x7666B64D68705F52A6786C047E200a74c212A526"  # Тот, кто дал approve
 
 # === 6) Проверяем подписку пользователя ===
 sub_end = subscription_contract.functions.subscriptionEnd(user_address).call()
@@ -67,12 +67,13 @@ nonce = w3.eth.get_transaction_count(account_address)
 tx = subscription_contract.functions.collectFee(user_address).build_transaction({
     "chainId": 11155111,  # Sepolia
     "gasPrice": w3.eth.gas_price,
+    "gas": 3000000,
     "from": account_address,
     "nonce": nonce
 })
 
 signed_tx = w3.eth.account.sign_transaction(tx, PRIVATE_KEY)
-tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 print(f"✅ Transaction sent: {tx_hash.hex()}")
 
 # Ждем подтверждения
@@ -84,3 +85,4 @@ balance_after = sub_token.functions.balanceOf(user_address).call()
 print(f"💰 New user balance: {Web3.from_wei(balance_after, 'ether')} SUB")
 
 print("\n✅ Fee successfully collected!")
+

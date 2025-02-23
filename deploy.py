@@ -94,6 +94,8 @@ tx_deploy_subscription = SubscriptionContract.constructor(
     fee_per_period
 ).build_transaction({
     "chainId": w3.eth.chain_id,
+    "gas": 3000000,
+    "maxPriorityFeePerGas": w3.to_wei('2', 'gwei'),
     "gasPrice": w3.eth.gas_price,
     "from": account_address,
     "nonce": nonce

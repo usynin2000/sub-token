@@ -1,0 +1,9 @@
+✅ User 0x7666B64D68705F52A6786C047E200a74c212A526 has an active subscription until 2026-02-23 17:36:00
+💰 User balance: 2500 SUB
+🔓 Approved allowance: 115792089237316195423570985008687907853269984665640564039457.584007913129639935 SUB
+⏳ Calling collectFee(0x7666B64D68705F52A6786C047E200a74c212A526) ...
+✅ Transaction sent: 36c0f301ebc673241ed0d963e18ee79395cb24e0bdb0cdaaa66a0860a68f5022
+✅ Transaction mined! Block: 7770260
+💰 New user balance: 2490 SUB
+
+✅ Fee successfully collected!
